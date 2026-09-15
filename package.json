@@ -1,0 +1,42 @@
+{
+  "name": "oneguard-mcp",
+  "version": "0.3.0",
+  "description": "MCP server that puts the OneGuard CLI in front of an AI agent — sync secrets into .env, generate credentials without revealing them, manage vaults and team members.",
+  "type": "module",
+  "bin": {
+    "oneguard-mcp": "src/index.js"
+  },
+  "main": "src/index.js",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node test/smoke.test.js",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "oneguard",
+    "secrets",
+    "dotenv",
+    "env"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oneguard-sa/oneguard_mcp.git"
+  },
+  "homepage": "https://docs.oneguard.one",
+  "bugs": {
+    "url": "https://github.com/oneguard-sa/oneguard_mcp/issues"
+  },
+  "author": "Mohamad Farhat",
+  "license": "MIT"
+}

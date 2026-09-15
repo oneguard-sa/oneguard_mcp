@@ -1,0 +1,42 @@
+name: Publish to npm
+
+# Publishes on a version tag. Uses npm trusted publishing (OIDC): no npm token
+# is stored in this repository, and npm records provenance linking the
+# published tarball to this workflow run and commit.
+#
+# One-time setup on npmjs.com: the package's Settings → Trusted Publisher →
+# GitHub Actions, repository oneguard-sa/oneguard_mcp, workflow publish.yml.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Test before publishing
+        run: node test/smoke.test.js
+
+      - name: Tag must match package.json version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./package.json').version")
+          if [ "$TAG" != "$PKG" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $PKG" >&2
+            exit 1
+          fi
+
+      - name: Publish
+        run: npm publish --access public
