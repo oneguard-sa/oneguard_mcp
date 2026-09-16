@@ -13,7 +13,7 @@ Claude: Wrote 12 variables to .env — DATABASE_URL, API_TOKEN, STRIPE_KEY, …
 
 It shells out to the `oneguard` binary you already have installed. No new backend, no second login, no API surface of its own: whatever the CLI can do, this exposes, and whatever it cannot, this does not pretend to.
 
-- **Zero dependencies.** The MCP stdio protocol is implemented directly. `npx` and it runs — nothing to install, nothing to build, no dependency tree to audit.
+- **Zero dependencies.** The MCP stdio protocol is implemented directly. Nothing to install, nothing to build, no dependency tree to audit — the whole server is the files in `src/`.
 - **Secret values do not come back.** Tools report variable *names* and counts. Values are written to and read from your `.env` by the CLI itself and never enter the model's context.
 - **Isolated credentials.** The agent's session never touches your own `oneguard auth login`.
 
@@ -30,7 +30,7 @@ It shells out to the `oneguard` binary you already have installed. No new backen
 ```bash
 claude mcp add oneguard -s user \
   --env ONEGUARD_API_KEY=og_your_key \
-  -- npx -y oneguard-mcp
+  -- npx -y github:oneguard-sa/oneguard_mcp#v0.3.0
 ```
 
 **Claude Desktop** (`claude_desktop_config.json`) **or Cursor** (`mcp.json`)
@@ -40,7 +40,7 @@ claude mcp add oneguard -s user \
   "mcpServers": {
     "oneguard": {
       "command": "npx",
-      "args": ["-y", "oneguard-mcp"],
+      "args": ["-y", "github:oneguard-sa/oneguard_mcp#v0.3.0"],
       "env": {
         "ONEGUARD_API_KEY": "og_your_key"
       }
@@ -50,6 +50,25 @@ claude mcp add oneguard -s user \
 ```
 
 Then ask the agent *"what's my OneGuard connection status?"* to confirm it is wired up.
+
+**Pin the tag.** `#v0.3.0` is not decoration: without it you run whatever is on
+`main` at that moment, so a push here would execute on your machine without you
+choosing to update. Bump the tag deliberately, after reading the
+[release notes](https://github.com/oneguard-sa/oneguard_mcp/releases).
+
+**Or clone it once.** `npx` re-resolves this repository every time an MCP server
+starts, which adds a few seconds to each session. A local clone is the fastest
+option and works offline:
+
+```bash
+git clone --branch v0.3.0 https://github.com/oneguard-sa/oneguard_mcp.git ~/tools/oneguard-mcp
+
+claude mcp add oneguard -s user \
+  --env ONEGUARD_API_KEY=og_your_key \
+  -- node ~/tools/oneguard-mcp/src/index.js
+```
+
+Update with `git fetch --tags && git checkout <new tag>`.
 
 ### Configuration
 
@@ -119,12 +138,22 @@ That file is the seam between the two projects. If the CLI's output changes, `li
 
 ## Releasing
 
+This server is installed straight from this repository, so a release is a tag
+and a set of release notes — there is no registry in the loop.
+
 ```bash
-npm version minor          # updates package.json
+npm version minor --no-git-tag-version   # bump package.json only
+git commit -am "0.4.0"
+git tag v0.4.0
 git push && git push --tags
 ```
 
-The tag triggers `.github/workflows/publish.yml`, which runs the tests, checks the tag matches `package.json`, and publishes via npm trusted publishing — no npm token lives in this repository, and npm records provenance linking the tarball to the commit it was built from.
+The tag triggers `.github/workflows/publish.yml`, which runs the test suite,
+checks the tag matches `package.json`, and publishes a GitHub Release. Anyone
+pinned to an older tag keeps running it until they change the pin.
+
+Publishing to npm later would not change how any of this works — the package is
+already shaped for it — but nothing here depends on it.
 
 ## License
 

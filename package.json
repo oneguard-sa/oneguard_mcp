@@ -1,7 +1,7 @@
 {
   "name": "oneguard-mcp",
   "version": "0.3.0",
-  "description": "MCP server that puts the OneGuard CLI in front of an AI agent — sync secrets into .env, generate credentials without revealing them, manage vaults and team members.",
+  "description": "MCP server that puts the OneGuard CLI in front of an AI agent \u2014 sync secrets into .env, generate credentials without revealing them, manage vaults and team members.",
   "type": "module",
   "bin": {
     "oneguard-mcp": "src/index.js"
@@ -33,7 +33,7 @@
     "type": "git",
     "url": "git+https://github.com/oneguard-sa/oneguard_mcp.git"
   },
-  "homepage": "https://oneguard.one/docs",
+  "homepage": "https://oneguard.one/docs/mcp/getting-started",
   "bugs": {
     "url": "https://github.com/oneguard-sa/oneguard_mcp/issues"
   },
