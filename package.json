@@ -33,7 +33,7 @@
     "type": "git",
     "url": "git+https://github.com/oneguard-sa/oneguard_mcp.git"
   },
-  "homepage": "https://docs.oneguard.one",
+  "homepage": "https://oneguard.one/docs",
   "bugs": {
     "url": "https://github.com/oneguard-sa/oneguard_mcp/issues"
   },

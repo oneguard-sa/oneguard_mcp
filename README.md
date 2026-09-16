@@ -20,7 +20,7 @@ It shells out to the `oneguard` binary you already have installed. No new backen
 ## Requirements
 
 - [Node.js](https://nodejs.org) 18 or newer
-- The `oneguard` CLI **1.2.0 or newer** — [installation](https://docs.oneguard.one/getting-started/)
+- The `oneguard` CLI **1.2.0 or newer** — [installation](https://oneguard.one/docs/getting-started/)
 - A OneGuard API key (dashboard → **Vault → API Keys → Add**)
 
 ## Install
