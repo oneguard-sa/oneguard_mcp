@@ -1,5 +1,6 @@
-import { runAuthed, ToolError } from '../cli.js';
-import { findByIdPrefix, parseLogs, parseTeams } from '../parsers.js';
+import { runAuthed, runStructured, ToolError } from '../cli.js';
+import { findByIdPrefix } from '../parsers.js';
+import { listLogs, listMembers } from '../structured.js';
 import { object, str } from './schema.js';
 
 const ROLES = ['owner', 'admin', 'member', 'finance'];
@@ -21,7 +22,7 @@ function requireStr(v, field) {
  * @returns {Promise<{id: string, email: string, role: string}>}
  */
 async function resolveMember(memberIdOrEmail) {
-  const members = parseTeams(await runAuthed(['teams', 'list']));
+  const { rows: members } = await listMembers();
   const needle = memberIdOrEmail.toLowerCase();
 
   const byEmail = members.find((m) => m.email.toLowerCase() === needle);
@@ -45,9 +46,18 @@ export const orgTools = [
     inputSchema: object({}),
     annotations: { readOnlyHint: true, openWorldHint: true },
     async handler() {
-      const out = await runAuthed(['teams', 'list']);
-      const members = parseTeams(out);
-      return { count: members.length, members, raw: out.trim() };
+      const { rows, raw, structured, ownerCount } = await listMembers();
+      return {
+        count: rows.length,
+        members: rows,
+        // Surfaced so the model can see, before proposing a removal or a
+        // demotion, that the organization has only one owner left. The server
+        // refuses that change outright; this is what lets the agent say so
+        // first instead of relaying a 400.
+        owner_count: ownerCount,
+        structured,
+        raw: raw.trim(),
+      };
     },
   },
   {
@@ -175,8 +185,7 @@ export const orgTools = [
     }),
     annotations: { readOnlyHint: true, openWorldHint: true },
     async handler(args) {
-      const out = await runAuthed(['logs', 'list']);
-      const all = parseLogs(out);
+      const { rows: all } = await listLogs();
       const limit = Number.isInteger(args.limit) ? Math.max(1, Math.min(500, args.limit)) : 50;
       const entries = all.slice(0, limit);
       return { count: entries.length, total: all.length, entries };

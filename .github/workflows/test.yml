@@ -18,4 +18,12 @@ jobs:
           node-version: ${{ matrix.node }}
       # No install step: this package has no dependencies, and the test suite
       # runs the real server over stdio against a mock CLI.
-      - run: node test/smoke.test.js
+      #
+      # Two runs, because the server has two code paths: one for a CLI older
+      # than 1.3.0 (human-readable output parsed with regular expressions, key
+      # stored on disk) and one for a current CLI (`--json`, key in the
+      # subprocess environment). Both are supported, so both are tested.
+      - name: Legacy CLI path (text parsing)
+        run: node test/smoke.test.js
+      - name: Current CLI path (--json)
+        run: node test/structured.test.js

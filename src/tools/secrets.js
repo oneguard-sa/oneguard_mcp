@@ -1,5 +1,6 @@
-import { runAuthed, ToolError } from '../cli.js';
-import { findByIdPrefix, parseCreatedId, parseSecrets } from '../parsers.js';
+import { runAuthed, runStructured, ToolError } from '../cli.js';
+import { findByIdPrefix, parseCreatedId } from '../parsers.js';
+import { listSecrets } from '../structured.js';
 import { fileExists, requireProjectDir, resolveEnvPath } from '../workspace.js';
 import { object, str, PROJECT_DIR } from './schema.js';
 
@@ -58,9 +59,14 @@ export const secretTools = [
     annotations: { readOnlyHint: true, openWorldHint: true },
     async handler(args) {
       const vault = requireStr(args.vault, 'vault');
-      const out = await runAuthed(['secrets', 'list', '--project', vault]);
-      const secrets = parseSecrets(out);
-      return { vault, count: secrets.length, secrets, raw: out.trim() };
+      const { rows, raw, structured } = await listSecrets(vault);
+      return {
+        vault,
+        count: rows.length,
+        secrets: rows,
+        structured,
+        raw: raw.trim(),
+      };
     },
   },
   {
@@ -89,14 +95,15 @@ export const secretTools = [
       const vault = requireStr(args.vault, 'vault');
       const name = requireStr(args.name, 'name');
       const flags = payloadFlags(args);
-      const out = await runAuthed([
+      const { json, raw: out } = await runStructured([
         'secrets', 'add', '--project', vault, '--name', name, ...flags,
       ]);
       return {
         created: true,
         vault,
         name,
-        id: parseCreatedId(out),
+        id: json?.secret?.id ?? parseCreatedId(out),
+        variables: json?.variables,
         source: flags[0] === '--file' ? 'env file' : 'key/value',
         raw: out.trim(),
       };
@@ -132,9 +139,7 @@ export const secretTools = [
       // only wants to change contents.
       let name = typeof args.name === 'string' ? args.name.trim() : '';
       if (!name) {
-        const listing = parseSecrets(
-          await runAuthed(['secrets', 'list', '--project', vault]),
-        );
+        const { rows: listing } = await listSecrets(vault);
         const match = findByIdPrefix(listing, secret);
         if (!match) {
           throw new ToolError(
@@ -202,9 +207,7 @@ export const secretTools = [
       const secret = requireStr(args.secret, 'secret');
       const confirm = requireStr(args.confirm, 'confirm');
 
-      const listing = parseSecrets(
-        await runAuthed(['secrets', 'list', '--project', vault]),
-      );
+      const { rows: listing } = await listSecrets(vault);
       const match = findByIdPrefix(listing, secret);
       if (!match) {
         throw new ToolError(`No secret matching "${secret}" in vault ${vault}.`);

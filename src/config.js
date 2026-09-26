@@ -42,4 +42,14 @@ export const READ_ONLY =
 export const CLI_TIMEOUT_MS = Number(process.env.ONEGUARD_MCP_TIMEOUT_MS || 60_000);
 
 export const SERVER_NAME = 'oneguard';
-export const SERVER_VERSION = '0.3.0';
+export const SERVER_VERSION = '0.4.0';
+
+/**
+ * First CLI version that speaks `--json` and reads ONEGUARD_API_KEY from its
+ * environment.
+ *
+ * Below this the server still works: it falls back to parsing the CLI's
+ * human-readable output and to `auth login`. Above it, nothing is parsed with a
+ * regular expression and no credential is written to disk.
+ */
+export const MIN_CLI_VERSION = '1.3.0';

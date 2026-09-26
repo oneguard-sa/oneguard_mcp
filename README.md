@@ -15,12 +15,12 @@ It shells out to the `oneguard` binary you already have installed. No new backen
 
 - **Zero dependencies.** The MCP stdio protocol is implemented directly. Nothing to install, nothing to build, no dependency tree to audit — the whole server is the files in `src/`.
 - **Secret values do not come back.** Tools report variable *names* and counts. Values are written to and read from your `.env` by the CLI itself and never enter the model's context.
-- **Isolated credentials.** The agent's session never touches your own `oneguard auth login`.
+- **No credential on disk.** With CLI 1.3.0+ the key is handed to each subprocess in its environment and never written anywhere. The agent's session never touches your own `oneguard auth login`.
 
 ## Requirements
 
 - [Node.js](https://nodejs.org) 18 or newer
-- The `oneguard` CLI **1.2.0 or newer** — [installation](https://oneguard.one/docs/getting-started/)
+- The `oneguard` CLI **1.3.0 or newer** — [installation](https://oneguard.one/docs/cli/getting-started). 1.2.0 still works; the server then parses the CLI's human-readable output and stores a credential on disk instead. `oneguard_status` tells you which mode you are in.
 - A OneGuard API key (dashboard → **Vault → API Keys → Add**)
 
 ## Install
@@ -30,7 +30,7 @@ It shells out to the `oneguard` binary you already have installed. No new backen
 ```bash
 claude mcp add oneguard -s user \
   --env ONEGUARD_API_KEY=og_your_key \
-  -- npx -y github:oneguard-sa/oneguard_mcp#v0.3.0
+  -- npx -y github:oneguard-sa/oneguard_mcp#v0.4.0
 ```
 
 **Claude Desktop** (`claude_desktop_config.json`) **or Cursor** (`mcp.json`)
@@ -40,7 +40,7 @@ claude mcp add oneguard -s user \
   "mcpServers": {
     "oneguard": {
       "command": "npx",
-      "args": ["-y", "github:oneguard-sa/oneguard_mcp#v0.3.0"],
+      "args": ["-y", "github:oneguard-sa/oneguard_mcp#v0.4.0"],
       "env": {
         "ONEGUARD_API_KEY": "og_your_key"
       }
@@ -51,7 +51,7 @@ claude mcp add oneguard -s user \
 
 Then ask the agent *"what's my OneGuard connection status?"* to confirm it is wired up.
 
-**Pin the tag.** `#v0.3.0` is not decoration: without it you run whatever is on
+**Pin the tag.** `#v0.4.0` is not decoration: without it you run whatever is on
 `main` at that moment, so a push here would execute on your machine without you
 choosing to update. Bump the tag deliberately, after reading the
 [release notes](https://github.com/oneguard-sa/oneguard_mcp/releases).
@@ -61,7 +61,7 @@ starts, which adds a few seconds to each session. A local clone is the fastest
 option and works offline:
 
 ```bash
-git clone --branch v0.3.0 https://github.com/oneguard-sa/oneguard_mcp.git ~/tools/oneguard-mcp
+git clone --branch v0.4.0 https://github.com/oneguard-sa/oneguard_mcp.git ~/tools/oneguard-mcp
 
 claude mcp add oneguard -s user \
   --env ONEGUARD_API_KEY=og_your_key \
@@ -76,7 +76,7 @@ Update with `git fetch --tags && git checkout <new tag>`.
 | --- | --- | --- |
 | `ONEGUARD_API_KEY` | — | Initializes the session on the first tool call. Without it, the agent must call `oneguard_init` with a key you supply. |
 | `ONEGUARD_CLI_PATH` | `oneguard` | Absolute path to the binary, when it is not on `PATH`. |
-| `ONEGUARD_MCP_HOME` | `~/.oneguard-mcp` | Isolated credential store for the agent's session. |
+| `ONEGUARD_MCP_HOME` | `~/.oneguard-mcp` | Isolated config directory for the agent's session. With CLI 1.3.0+ nothing is written there. |
 | `ONEGUARD_MCP_READONLY` | `false` | `1` hides every mutating tool. |
 | `ONEGUARD_MCP_TIMEOUT_MS` | `60000` | Per-command timeout. |
 
@@ -104,7 +104,7 @@ This server sits between a secrets manager and a language model, so the interest
 
 **Generating a credential never reveals it.** `oneguard_secrets_generate` has the CLI generate the value and store it directly, merging into the secret so every other variable survives. The agent learns that `DB_PASSWORD` now exists, and nothing more. `oneguard_generate` is the one tool that returns a value — a value stored nowhere is useless unless returned — and its description steers the model to the other tool whenever the value is destined for a secret.
 
-**Your login is not the agent's login.** The CLI keeps its key in `$HOME/.oneguard/credentials.json`, one file for every copy of the CLI on the machine. This server hands each subprocess its own `HOME`, so an agent session cannot overwrite the key you use in your terminal — and a rejected key here cannot sign you out there.
+**Your login is not the agent's login.** From CLI 1.3.0 the agent's key lives only in the subprocess environment, so there is no stored credential at all. On an older CLI the key is stored, and this server hands each subprocess its own `HOME`, so an agent session cannot overwrite the key you use in your terminal — and a rejected key here cannot sign you out there.
 
 **Destructive tools ask for proof.** Deleting a secret requires its exact name; removing a member requires their exact email. Both are checked against the server before anything happens, so an agent working from a half-remembered name is stopped rather than guessing.
 

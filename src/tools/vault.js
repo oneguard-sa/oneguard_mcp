@@ -1,5 +1,6 @@
-import { runAuthed, ToolError } from '../cli.js';
-import { parseCreatedId, parseProjects } from '../parsers.js';
+import { runAuthed, runStructured, ToolError } from '../cli.js';
+import { parseCreatedId } from '../parsers.js';
+import { listVaults } from '../structured.js';
 import { object, str } from './schema.js';
 
 /**
@@ -28,9 +29,8 @@ export const vaultTools = [
     inputSchema: object({}),
     annotations: { readOnlyHint: true, openWorldHint: true },
     async handler() {
-      const out = await runAuthed(['vault', 'list']);
-      const vaults = parseProjects(out);
-      return { count: vaults.length, vaults, raw: out.trim() };
+      const { rows, raw, structured } = await listVaults();
+      return { count: rows.length, vaults: rows, structured, raw: raw.trim() };
     },
   },
   {
@@ -42,8 +42,13 @@ export const vaultTools = [
     annotations: { readOnlyHint: false, destructiveHint: false },
     async handler(args) {
       const name = requireStr(args.name, 'name');
-      const out = await runAuthed(['vault', 'add', '--name', name]);
-      return { created: true, name, id: parseCreatedId(out), raw: out.trim() };
+      const { json, raw } = await runStructured(['vault', 'add', '--name', name]);
+      return {
+        created: true,
+        name,
+        id: json?.vault?.id ?? parseCreatedId(raw),
+        raw: raw.trim(),
+      };
     },
   },
   {

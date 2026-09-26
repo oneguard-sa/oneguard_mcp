@@ -1,4 +1,4 @@
-import { runAuthed, runCliChecked, ToolError } from '../cli.js';
+import { runCliChecked, runStructured, ToolError } from '../cli.js';
 import { object, str, bool } from './schema.js';
 
 /**
@@ -103,7 +103,8 @@ export const generateTools = [
         }
         flags.push('--count', String(args.count));
       }
-      // No API key needed: generation is entirely local.
+      // No API key needed: generation is entirely local, so this deliberately
+      // does not go through runStructured (which would require a session).
       const out = await runCliChecked(['generate', ...flags]);
       const values = out
         .split(/\r?\n/)
@@ -142,7 +143,7 @@ export const generateTools = [
       const flags = generatorFlags(args);
       if (args.force === true) flags.push('--force');
 
-      const out = await runAuthed([
+      const { json, raw: out } = await runStructured([
         'secrets', 'generate',
         '--project', vault,
         '--id', secret,
@@ -156,8 +157,12 @@ export const generateTools = [
         vault,
         secret,
         key,
-        replaced: /^Replaced/m.test(out),
-        variable_count: total ? Number(total[1]) : null,
+        replaced: json?.replaced ?? /^Replaced/m.test(out),
+        // Names only — the CLI never puts the generated value in its JSON
+        // unless --show was passed, and this tool never passes it.
+        variables: json?.variables,
+        variable_count:
+          json?.variable_count ?? (total ? Number(total[1]) : null),
         note: 'The generated value was stored and is intentionally not returned.',
         raw: out.trim(),
       };

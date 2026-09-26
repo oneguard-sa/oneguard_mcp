@@ -1,7 +1,8 @@
 import path from 'node:path';
 
 import { runAuthed, ToolError } from '../cli.js';
-import { findByIdPrefix, parseProjects, parseSecrets } from '../parsers.js';
+import { findByIdPrefix } from '../parsers.js';
+import { listSecrets, listVaults } from '../structured.js';
 import {
   clearLink,
   fileExists,
@@ -75,7 +76,7 @@ export const envTools = [
 
       // Step 1 — which vault? Hand the choice back to the user via the model.
       if (!vaultId) {
-        const vaults = parseProjects(await runAuthed(['vault', 'list']));
+        const { rows: vaults } = await listVaults();
         if (vaults.length === 0) {
           throw new ToolError(
             'No vaults found in this organization. Create one first with oneguard_vault_add.',
@@ -92,9 +93,7 @@ export const envTools = [
       }
 
       // Step 2 — which secret inside it?
-      const secrets = parseSecrets(
-        await runAuthed(['secrets', 'list', '--project', vaultId]),
-      );
+      const { rows: secrets } = await listSecrets(vaultId);
       if (secrets.length === 0) {
         throw new ToolError(
           `Vault ${vaultId} has no secrets yet. Create one with oneguard_secrets_add.`,
@@ -176,9 +175,7 @@ export const envTools = [
       let secretName = null;
       if (link.project_id && link.secret_id) {
         try {
-          const secrets = parseSecrets(
-            await runAuthed(['secrets', 'list', '--project', link.project_id]),
-          );
+          const { rows: secrets } = await listSecrets(link.project_id);
           secretName = findByIdPrefix(secrets, link.secret_id)?.name ?? null;
         } catch {
           // A broken link should still report its raw state rather than fail.
@@ -233,9 +230,7 @@ export const envTools = [
         );
       }
 
-      const secrets = parseSecrets(
-        await runAuthed(['secrets', 'list', '--project', link.project_id]),
-      );
+      const { rows: secrets } = await listSecrets(link.project_id);
       const matched = findByIdPrefix(secrets, link.secret_id);
       if (!matched) {
         throw new ToolError(

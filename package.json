@@ -1,6 +1,6 @@
 {
   "name": "oneguard-mcp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "MCP server that puts the OneGuard CLI in front of an AI agent \u2014 sync secrets into .env, generate credentials without revealing them, manage vaults and team members.",
   "type": "module",
   "bin": {
@@ -17,7 +17,7 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "test": "node test/smoke.test.js",
+    "test": "node test/smoke.test.js && node test/structured.test.js",
     "typecheck": "tsc -p tsconfig.json"
   },
   "keywords": [
